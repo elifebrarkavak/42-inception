@@ -1,0 +1,68 @@
+Inception'da bilmen gereken Docker komutları
+Dockerfile
+    ↓
+docker build
+    ↓
+IMAGE
+    ↓
+docker run / docker compose up
+    ↓
+CONTAINER
+    ↓
+docker ps ile kontrol
+    ↓
+docker logs ile log kontrolü
+    ↓
+docker exec ile container içine girme
+
+**docker ps=Şu anda çalışan container'ları gösterir
+**docker ps -a=durdurulmuş container'ları da gösterir. (a->all)
+**docker images=Bilgisayarındaki Docker image'larını gösterir.
+**docker build=Dockerfile'dan image oluşturur.
+(docker build -t nginx . = image'a nginx adı/tag'i ver)
+**docker compose build=Compose dosyandaki servislerin image'larını oluşturur.
+docker compose build
+        ↓
+docker-compose.yml / compose.yml okunur
+        ↓
+NGINX Dockerfile
+        ↓
+NGINX image
+
+WordPress Dockerfile
+        ↓
+WordPress image
+
+MariaDB Dockerfile
+        ↓
+MariaDB image
+**docker compose up=Compose'da tanımladığın sistemi ayağa kaldırır.sadece image oluşturmak değil; gerekli container'ları başlatmak, network ve volume bağlantılarını uygulamak gibi işleri de Compose yönetir.
+**docker compose up -d=container'lar arka planda çalışır ve terminalin sana geri döner.
+**docker compose up --build=Gerekliyse image'ları yeniden build et ve sistemi çalıştır
+**docker compose down=Compose ile oluşturduğun sistemi kapatır ve ilgili container/network kaynaklarını kaldırır.Volume'ları varsayılan olarak silmez
+**docker compose down -v=Compose'un yönettiği volume'ları da kaldırır.
+**docker logs mariadb=Bir container'ın loglarını görmeni sağlar.
+**docker logs -f nginx=Logları canlı olarak takip eder.
+**docker exec nginx nginx -t=Çalışan bir container'ın içerisinde komut çalıştırmanı sağlar.
+**docker exec -it nginx bash=Çalışan NGINX container'ının içine terminal üzerinden girmek istiyorum.(container'ın shell'i)
+**docker inspect nginx=Bir container hakkında ayrıntılı teknik bilgi verir.
+**docker network ls=Docker network'lerini gösterir.
+**docker volume ls=Docker volume'larını gösterir.
+**docker volume inspect VOLUME_ADI=Volume hakkında ayrıntılı bilgi verir.
+**docker stop nginx=Belirli bir container'ı durdurur.
+**docker start nginx=Durdurulmuş container'ı tekrar çalıştırır.
+**docker restart nginx=Container'ı durdurup yeniden başlatır.
+**docker rm nginx=Container'ı kaldırır (-f zorla)
+**docker rmi IMAGE_ADI=image siler
+**docker system prune=Kullanılmayan bazı Docker kaynaklarını temizler
+-----------------------------
+Evaluation için en kritik olanlar
+- docker ps → Ne çalışıyor?
+- docker images → Hangi image'lar var?
+- docker logs → Neden hata verdi?
+- docker exec → Container'ın içine gir.
+- docker inspect → Detaylarını incele.
+- docker network ls → Ağlar ne?
+- docker volume ls → Kalıcı veriler nerede?
+- docker compose up → Sistemi başlat.
+- docker compose down → Sistemi kapat.

@@ -119,7 +119,12 @@ Kalıcı veriler ise:
 WordPress ───→ WordPress Volume
 MariaDB ─────→ Database Volume
 **TLS=HTTPS'in güvenli olmasını sağlayan temel protokoldür. GINX'in TLS yapılandırmasını yapılacak.
-
+**docker-compose.yml dosyası containerları birbirine bağlar.
+**docker build=ımage oluşturma dockerfile'dan/ docker run=container oluşturma imageden
+**process=çalışan program
+**daemon=Arka planda sürekli çalışan servis/programlara denir.
+**CMD=container başladığında hangi program çalışacak
+**ENTRYPOINT=container başladığında çalışacak executable
 ------------------------
 Docker Nedir ? 
 (Docker, uygulamaları ve ihtiyaç duydukları ortamı birbirinden izole container'lar içerisinde çalıştırmamızı
@@ -278,4 +283,91 @@ WordPress
    ↓
 MariaDB
 ------------------------
-29 da kalındı
+Kullanıcı siteye girdiğinde tam olarak ne oluyor ?
+Tarayıcı
+   ↓
+Domain çözümleme
+   ↓
+IP adresi
+   ↓
+443 portuna bağlantı
+   ↓
+TLS / HTTPS bağlantısı
+   ↓
+NGINX
+   ↓
+PHP isteğiyse
+   ↓
+WordPress / PHP-FPM
+   ↓
+MariaDB
+   ↓
+WordPress
+   ↓
+NGINX
+   ↓
+Tarayıcı
+   ↓
+Sayfa ekranda gösterilir
+
+https://     → HTTPS kullan
+ekavak.42.fr → ulaşmak istediğim domain
+443          → HTTPS'in varsayılan portu 
+(443 yazmasan bile HTTPS olduğu için tarayıcı varsayılan olarak 443'ü kullanabilir.)
+ekavak.42.fr hangi IP adresinde?
+Ama o bilgisayarda birçok program çalışıyor olabilir, IP adresini bulmak tek başına yeterli değil.
+Tarayıcı hangisine gidecek?=Burada port devreye giriyor.
+443 portunda NGINX var
+doğrudan normal HTTP iletişimine başlamıyor.
+Önce güvenli bir bağlantı oluşturulması gerekiyor. Burada TLS devreye giriyor.
+Tarayıcı:"Sen gerçekten bağlanmak istediğim sunucu musun?"
+        │
+        ▼
+NGINX:"İşte sertifikam."
+        │
+        ▼
+Tarayıcı:"Tamam, güvenli bağlantı için gerekli işlemleri yapalım."
+HTTP + TLS = HTTPS
+Tarayıcı HTTP request gönderiyor
+NGINX ile PHP-FPM farklı container'larda olduğu için birbirleriyle Docker network üzerinden haberleşir.
+PHP-FPM gerekli WordPress PHP kodunu çalıştırıyor.
+WordPress'in PHP dosyalarının içinde sabit olarak bulunmaz.
+MariaDB'de saklanır. Dolayısıyla WordPress'in database'e gitmesi gerekiyor.
+Docker network üzerinde olduğu için WordPress MariaDB'ye servis adı üzerinden ulaşabilir.
+WordPress MariaDB'ye sorgu gönderiyor
+WordPress:"Ana sayfada göstermem gereken yazıları ver."
+          │
+          ▼
+       MariaDB
+Gerekli verileri buluyor. Sonra sonucu WordPress'e gönderir.
+WordPress sayfayı oluşturuyor.
+Sonuç tekrar NGINX'e dönüyor=PHP-FPM tarafından oluşturulan cevap NGINX tarafına geri döner.
+NGINX cevabı tarayıcıya gönderiyor
+NGINX
+   │
+   │ HTTPS üzerinden
+   │ HTTP Response
+   ▼
+Browser
+Sonuçta sen ekranda WordPress sitesini görürsün.
+Bütün bu süreçte Docker'ın görevi web sayfasını oluşturmak değil.servislerinin izole container'larda çalışmasını sağlıyor.
+Docker Compose ise bu yapının tanımlanmasını ve birlikte yönetilmesini kolaylaştırıyor.
+Docker Network=iletişim
+Volume=kalıcı veri
+------------------------
+Make atıldığında nasıl çalışır ?
+make
+ ↓
+Docker Compose
+ ↓
+Dockerfile'lar build edilir
+ ↓
+Image'lar oluşur
+ ↓
+Container'lar oluşturulur
+ ↓
+Network oluşturulur
+ ↓
+Volume'lar bağlanır
+ ↓
+Servisler çalışır
