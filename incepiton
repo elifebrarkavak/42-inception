@@ -18,6 +18,7 @@ WordPress
 MariaDB
 NGINX dışarıyla iletişim kuruyor, WordPress uygulamayı çalıştırıyor, MariaDB ise verileri saklıyor.
 NGINX=kapı / WordPress=site / MariaDB=database
+(MariaDB programı çalışan bir database server'dır.)
 ------------------------
 Server ve Client (Client bir hizmet veya veri isteyen taraftır; server ise gelen isteği karşılayıp cevap veren taraftır.)
 Client (istemci), bir şeyi isteyen taraftır. Server (sunucu) ise bu isteği karşılayan ve cevap veren taraftır.
@@ -323,7 +324,7 @@ doğrudan normal HTTP iletişimine başlamıyor.
 Tarayıcı:"Sen gerçekten bağlanmak istediğim sunucu musun?"
         │
         ▼
-NGINX:"İşte sertifikam."
+NGINX:"İşte sertifikam." (Certificate = Sunucunun kimlik kartı)
         │
         ▼
 Tarayıcı:"Tamam, güvenli bağlantı için gerekli işlemleri yapalım."
@@ -371,3 +372,137 @@ Network oluşturulur
 Volume'lar bağlanır
  ↓
 Servisler çalışır
+------------------------
+Docker vs Virtual Machine
+VM
+→ kendi işletim sistemi
+→ kendi kernel'i
+→ daha ağır
+Container
+→ host kernel'ini paylaşır
+→ process izolasyonu
+→ daha hafif
+------------------------
+Docker Compose vs Dockerfile
+Dockerfile tek bir image'ın nasıl oluşturulacağını tanımlar.
+Docker Compose ise birden fazla servisin nasıl build edileceğini, çalışacağını, network ve volume ilişkilerini tanımlar.
+------------------------
+Port mapping mantığı
+HOST:CONTAINER    443:443
+------------------------
+Docker network neden gerekiyor?=Aynı user-defined Docker network'teki container'lar birbirlerine servis isimleriyle ulaşabilir.
+------------------------
+Neden localhost kullanamıyoruz?
+WordPress container'ında localhost demek WordPress container'ının kendisi.
+MariaDB başka container'da olduğu için: mariadb:3306
+------------------------
+PHP-FPM ve FastCGI
+NGINX
+   ↓ FastCGI
+PHP-FPM
+   ↓
+PHP kodunu çalıştırır
+NGINX PHP kodunu kendisi çalıştırmaz.
+Tipik Inception mimarisinde NGINX, PHP isteklerini WordPress/PHP-FPM'e 9000 portundan yönlendirir.
+------------------------
+Environment variable ve secrets
+Database adı, kullanıcı gibi ayarları dışarıdan vermek için environment variable kullanılır.
+Environment variable = otomatik olarak güvenli secret değildir.
+.env dosyasının amacı = Docker Compose'un değişkenleri buradan alabilmesi.
+------------------------
+restart: always / restart policy
+Docker container'ın beklenmedik şekilde durması durumunda tekrar başlatılmasını sağlayan politikadır.
+------------------------
+WordPress depends_on MariaDB
+------------------------
+Kullanıcının doğrudan WordPress/PHP-FPM veya MariaDB ile konuşması yerine dış bağlantıyı NGINX karşılar.
+------------------------
+EXPOSE bir container'ın hangi portta servis verdiğini belirtir fakat portu host'a publish etmez.
+ports ise host ile container arasında port mapping yaparak dış erişim sağlar.
+EXPOSE
+→ Container'ın hangi portu kullandığını belirtir.
+→ Dışarı açmaz.
+ports
+→ Host portunu container portuna bağlar.
+→ Dışarıdan erişilebilir hale getirir.
+------------------------
+Sertifikada sunucunun public key'i ve kimlik bilgileriyle ilişkili bilgiler bulunur.
+Inception'da self-signed certificate kullanman mümkündür/subject'e göre beklenebilir.
+Self-signed=Sertifikayı güvenilir harici bir Certificate Authority değil, sen kendin imzalamışsındır.
+------------------------
+Private key=sunucunun gizli anahtarı
+Certificate / public information
+→ başkaları görebilir
+Private key
+→ sadece server'da kalmalı
+------------------------
+TLS handshake nedir?
+Browser ile server direkt: “Tamam şifreleyelim.”deyip başlamaz.
+Önce aralarında güvenli bağlantının nasıl kurulacağı konusunda bir görüşme gerçekleşir
+Temel amacı;
+1. Server'ın kimliği hakkında güven oluşturmak
+2. Hangi güvenlik algoritmalarının kullanılacağını belirlemek
+3. Şifreli bağlantı için gerekli anahtarları oluşturmak
+NGINX TLS 1.2 ve TLS 1.3 kullanır çünkü bunlar modern ve güvenli TLS sürümleridir.
+TLS, istemci ile NGINX arasındaki HTTP trafiğini şifreler. Certificate sunucunun kimliği ve public key'iyle ilgili bilgileri taşırken private key sunucuda gizli tutulur.
+TLS handshake sırasında istemci ve sunucu güvenli bağlantı için kullanılacak parametreleri belirler
+------------------------
+Volume vs Bind Mount
+ikisininde amacı=Container silinse bile verilerin kaybolmaması veya host ile container arasında veri paylaşılması.
+Ama yönetilme şekilleri farklıdır.
+Bind mount'ta ise host üzerinde belirli bir klasörü doğrudan container içine bağlarsın.
+Docker Volume
+Docker yönetir
+     ↓
+volume adı
+     ↓
+container
+Bind Mount
+Host'taki belirli klasör
+     ↓
+container
+Volume
+→ Docker merkezli
+
+Bind mount
+→ Host filesystem merkezli
+------------------------
+Volume neden kullanıyorsun?
+Container'ın lifecycle'ı ile persistent verinin lifecycle'ını ayırmak için.
+MariaDB veya WordPress container'ı yeniden oluşturulsa bile veriler kaybolmamalı.
+------------------------
+MariaDB root
+     ↓
+Çok güçlü kullanıcı
+WordPress user
+     ↓
+Sadece WordPress DB için
+gereken yetkiler
+bu least privilege yani mininmum gerekli yetki prensibidir.
+------------------------
+Dışarıya yalnızca gerçekten dışarıdan erişilmesi gereken servisi aç = attack surface'i azaltmak
+------------------------
+Dockerfile Talimatları
+**FROM debian:bookworm=Image'ımı hangi temel image'ın üzerine kuracağım?
+**RUN apt-get install -y nginx=Image build edilirken komut çalıştırır.
+**COPY conf/nginx.conf /etc/nginx/nginx.conf=Host/build context'teki dosyayı image içine kopyalar.
+**WORKDIR /var/www/html=Sonraki komutların çalışacağı varsayılan klasörü belirler.
+**ENV APP_ENV=production=Image/container ortamında environment variable tanımlar.
+**ARG=Build sırasında kullanılan değişkendir.
+ARG
+→ build sırasında
+ENV
+→ çalışan container ortamında da kullanılabilir
+**EXPOSE 443=Bu container'ın uygulaması 443 portunu kullanıyor.Dışarı publish etmez.
+**CMD ["nginx", "-g", "daemon off;"]=Container başladığında varsayılan olarak çalıştırılacak komuttur.
+**ENTRYPOINT ["/entrypoint.sh"]=container başladığında çalıştırılacak ana executable'ı belirleyebilir
+ENTRYPOINT
+→ container'ın temel olarak ne çalıştıracağını sabitler
+CMD
+→ varsayılan command/argument sağlar
+------------------------
+Docker image tek dev dosya gibi düşünülmez.
+Dockerfile'daki birçok adım image üzerinde bir layer oluşturur.
+Layer neden var?
+Docker image'ları daha verimli yönetebilmek için.
+dosya değiştirdin.Docker her şeyi sıfırdan yapmak zorunda kalmayabilir.Önceki layer'ları cache'den kullanabilir
