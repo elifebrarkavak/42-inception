@@ -1,0 +1,281 @@
+Inception projesi aslında sana “bir web sitesi nasıl gerçek bir sistem olarak ayağa kaldırılır?” sorusunu öğretmeye çalışıyor.
+Sen bu projede doğrudan sıfırdan bir web sitesi yazmıyorsun.
+Hazır servisleri doğru şekilde bir araya getiriyorsun. Bunlar temel olarak NGINX, WordPress ve MariaDB.
+Ama önemli nokta şu: bunların her biri ayrı bir Docker container içinde çalışıyor.
+Örneğin;
+Bir kullanıcı tarayıcıdan senin sitene girmek istiyor. İlk karşısına çıkan servis NGINX oluyor. NGINX burada kapı görevlisi gibi davranıyor.
+Dışarıdan gelen bağlantıyı kabul ediyor ve HTTPS üzerinden güvenli şekilde iletişim kurulmasını sağlıyor.
+Sonra kullanıcı WordPress sayfasını görmek istediği için NGINX bu isteği WordPress tarafına iletiyor.
+WordPress ise sitenin kendisi gibi düşünebilirsin. Sayfalar, kullanıcılar, yazılar, ayarlar gibi şeyleri yönetiyor.
+Ama WordPress bütün bu bilgileri kendi içinde tutmuyor.
+Örneğin bir kullanıcının hesabı, bir blog yazısı veya site ayarı gerektiğinde bunları MariaDB isimli veritabanından alıyor.
+Kullanıcı
+   ↓
+NGINX
+   ↓
+WordPress
+   ↓
+MariaDB
+NGINX dışarıyla iletişim kuruyor, WordPress uygulamayı çalıştırıyor, MariaDB ise verileri saklıyor.
+NGINX=kapı / WordPress=site / MariaDB=database
+------------------------
+Server ve Client (Client bir hizmet veya veri isteyen taraftır; server ise gelen isteği karşılayıp cevap veren taraftır.)
+Client (istemci), bir şeyi isteyen taraftır. Server (sunucu) ise bu isteği karşılayan ve cevap veren taraftır.
+Mesela bir restorana gittiğini düşün.
+Sen müşterisin ve “Bir kahve istiyorum” diyorsun. Restoran bu isteği alıyor, kahveyi hazırlıyor ve sana getiriyor.
+Burada sen client, restoran server gibi düşünülebilir.
+Pc açısından örneğin;
+Chrome'u açıp google.com yazdığında Chrome, Google'ın sunucusuna “Bana ana sayfayı gönder” diye bir request (istek) gönderir.
+Google'ın server'ı isteği işler ve gerekli verileri bir response (cevap) olarak geri gönderir.
+İstek gönderen taraf client, isteği karşılayıp hizmet veren taraf server'dır.Ayrı pc olmasına gerek yok.
+------------------------
+Inception'da hangisi client, hangisi server?
+Senin projende tarayıcı client olur. (https://kullaniciadi.42.fr)
+Tarayıcı şöyle bir istekte bulunur:"Bu web sitesinin ana sayfasını istiyorum."
+CLIENT                         SERVER
+Tarayıcı                        NGINX
+   │                              │
+   │       HTTPS Request          │
+   │ ───────────────────────────► │
+   │                              │
+   │       Web sayfası            │
+   │ ◄─────────────────────────── │
+Tarayıcı = Client
+NGINX = Server
+! Bir program aynı sistem içerisinde başka bir servise karşı client rolüne de geçebilir.
+Örneğin WordPress, MariaDB'den veri istediğinde:
+WordPress                     MariaDB
+   │                             │
+   │ "Blog yazılarını ver"       │
+   │ ─────────────────────────►  │
+   │                             │
+   │     Database sonucu         │
+   │ ◄─────────────────────────  │
+WordPress client, MariaDB server
+Yani “WordPress her zaman server'dır” diye düşünmemelisin. Client/server kavramları kimin istekte bulunduğuna göre değişebilir.
+------------------------
+**IP adresi=Bilgisayarların ağ üzerindeki adresidir.Bir cihaz başka bir cihazla iletişim kurmak istediğinde IP adresini kullanabilir.
+Bir nevi pcnin ev adresi
+**Domain=IP adreslerini sürekli hatırlamak zor olduğu için domain (alan adı) kullanıyoruz.
+Örneğin;
+142.xxx.xxx.xxx yerine google.com
+**Port=Bir bilgisayar aynı anda birçok ağ servisi çalıştırabilir.Hangi servise bağlanacağımızı belirtmek için portlar kullanılır.
+IP adresi = apartmanın adresi
+Port      = daire numarası
+Inception için;
+443  → HTTPS / NGINX
+3306 → MariaDB
+**HTTP=Tarayıcı ile web server'ın iletişim kurmasını sağlayan protokoldür.
+Browser
+   │
+   │ HTTP Request
+   ▼
+Server
+   │
+   │ HTTP Response
+   ▼
+Browser
+**HTTPS=HTTP'nin şifrelenmiş halidir.
+Client ─────── Server            
+       açık veri
+Client
+   │
+   │ 🔒 şifrelenmiş (Bu şifreleme TLS kullanılarak gerçekleştirilir.)
+   ▼
+Server
+Inception için;
+NGINX
+↓
+TLS
+↓
+HTTPS
+↓
+Port 443
+**MariaDB=MariaDB bir ilişkisel veritabanı yönetim sistemidir.WordPress'in verilerini saklar.
+WordPress
+      │
+      │ "Bu kullanıcının bilgilerini ver"
+      ▼
+MariaDB
+      │
+      │ sonuç
+      ▼
+WordPress
+**WordPress=WordPress bir Content Management System (CMS)'dir.Yani web sitesi oluşturmayı ve içeriği yönetmeyi sağlayan bir yazılımdır.PHP ile yazılmıştır.
+**PHP-FPM=PHP-FPM, PHP kodlarını çalıştıran bir sistemdir.
+Inception'daki WordPress container'ında;
+WordPress
++
+PHP-FPM
+**NGINX=Bir web server yazılımıdır.Kullanıcı siteye bağlandığında isteği ilk karşılayan servis NGINX'tir.NGINX isteğin ne olduğuna bakar.
+**Debian = bir Linux dağıtımıdır ubuntu gibi
+container image'larını oluştururken Debian gibi minimal bir Linux ortamı temel alınır.
+Dockerfile = Bir servisin image'ı nasıl oluşturulur?
+Docker Compose = Servisler birlikte nasıl çalışır?
+Container'lar aynı Docker network içerisinde birbirlerine ulaşabilirler.
+**Docker Network = container arası iletişim
+**volume=Kalıcı database verisi. container oluşturulduğunda tekrar aynı verilere erişebilir.
+Kalıcı veriler ise:
+WordPress ───→ WordPress Volume
+MariaDB ─────→ Database Volume
+**TLS=HTTPS'in güvenli olmasını sağlayan temel protokoldür. GINX'in TLS yapılandırmasını yapılacak.
+
+------------------------
+Docker Nedir ? 
+(Docker, uygulamaları ve ihtiyaç duydukları ortamı birbirinden izole container'lar içerisinde çalıştırmamızı
+ve bu container'ları yönetmemizi sağlayan bir containerization platformudur.)
+
+Bir programı çalışması için ihtiyaç duyduğu ortamla birlikte izole bir şekilde çalıştırmamızı sağlayan bir teknolojidir.
+Diyelim ki bir web uygulaması geliştirdin.Senin bilgisayarında hepsi kurulu ve uygulama çalışıyor.
+Sonra projeyi arkadaşına gönderiyorsun. Arkadaşında Python 3.9 var, MariaDB'nin başka sürümü var, bazı kütüphaneler yok.
+Docker'ın çözmeye çalıştığı temel problemlerden biri bu.
+Docker ile uygulamanın çalışacağı ortamı tanımlıyorsun. Böylece uygulama kendi izole ortamında çalışıyor.
+
+Container nedir ?
+Docker'ı anlamak için en önemli kavram container.
+Container'ı bilgisayarının içinde oluşturulmuş izole bir çalışma alanı gibi düşünebilirsin.
+Docker olmadan üçünü doğrudan işletim sistemine kurabilirsin. Ancak Zamanla sistem karmaşıklaşabilir.
+Docker kullanırsan:
+Bilgisayarım
+│
+├── Container 1
+│      └── NGINX
+│
+├── Container 2
+│      ├── WordPress
+│      └── PHP-FPM
+│
+└── Container 3
+       └── MariaDB
+Her servis kendi ortamında çalışır.
+İşte bu izole çalışan ortamlara container diyoruz.
+Başlangıçta container'ı "küçük bir bilgisayar" gibi düşünmek anlamayı kolaylaştırabilir ama teknik olarak container ayrı bir sanal makine değildir.
+Fakat container, VM gibi kendi başına tam bir işletim sistemi ve ayrı kernel çalıştırmaz. Host sistemin kernel'ini paylaşır ve process'leri izole eder.
+! Her container sadece kendi görevi için gereken şeyleri barındırabilir.
+
+Peki Docker bunları nasıl oluşturuyor ?
+Docker Image.
+Container'ı direkt kafamıza göre oluşturmuyoruz. Önce nasıl bir ortam istediğimizi tarif ediyoruz.
+Mesela diyoruz ki:
+Debian kullan.
+NGINX kur.
+Config dosyamı içine koy.
+Container açılınca NGINX'i çalıştır.
+Bunun tarifini bir Dockerfile içerisinde yazıyoruz.
+Dockerfile'a yemek tarifi gibi bakabilirsin.Docker bu tarifi okuyarak bir image oluşturuyor.
+Dockerfile
+     │
+     │ docker build
+     ▼
+   IMAGE
+Image, container oluşturmak için kullanılan hazır şablondur.
+Ama image'ın kendisini çalışan program olarak düşünme.
+Image'dan container oluşturursun.
+Dockerfile
+     ↓
+   BUILD
+     ↓
+   Image
+     ↓
+    RUN
+     ↓
+ Container
+
+Image ile container farkı
+Image = şablon
+Container = o şablondan oluşturulmuş çalışan instance
+Hatta aynı image'dan teorik olarak birden fazla container oluşturabilirsin.
+
+Docker'ın çalışma sırası
+Dockerfile
+     ↓
+docker build
+     ↓
+NGINX Image
+     ↓
+docker run
+     ↓
+NGINX Container
+
+Container'ın içinde aslında ne çalışıyor ?
+Container'ın temelinde process kavramı vardır.
+Process, çalışan program demektir.
+nginx programı
+      ↓
+NGINX process'i oluşur. 
+NGINX Container
+       │
+       └── NGINX process
+Container'ın ana process'i sonlanırsa container da genellikle sonlanır.
+Bu yüzden Docker container: "İçinde sonsuza kadar açık duran küçük bilgisayar."olarak düşünülmemeli.
+Daha doğru yaklaşım: İzole edilmiş process veya process grubunun çalıştığı ortam.
+
+Container'lar birbirini nasıl görüyor ? = Burada Docker Network devreye giriyor.
+             Docker Network
+                   │
+       ┌───────────┼───────────┐
+       │           │           │
+       ▼           ▼           ▼
+    NGINX      WordPress     MariaDB
+ Container     Container    Container
+Böylece container'lar birbirlerine ağ üzerinden ulaşabiliyor.
+
+Container'ı tamamen kaldırırsan container'ın kendi yazılabilir katmanındaki veriler de gider. Ama bizim WordPress database'imizin kaybolmasını istemiyoruz.
+Burada Docker Volume kullanıyoruz.
+Volume, kalıcı veriyi container'ın yaşam döngüsünden ayırmamızı sağlar.
+MariaDB Container
+       │
+       │ veri yaz
+       ▼
+   DB VOLUME
+       │
+       ▼
+  Kalıcı veri
+
+Docker Compose neden gerekiyor ? = tüm sistemin yöneticisi
+Üç servisi elle yönetmek karmaşıklaşmaya başlar. Docker Compose burada devreye girer.
+Bir Compose dosyasında kabaca:
+Üç servisim var.
+NGINX şu Dockerfile'dan oluşsun.
+WordPress şu Dockerfile'dan oluşsun.
+MariaDB şu Dockerfile'dan oluşsun.
+Aynı network'e bağlansınlar.
+Şu volume'ları kullansınlar.
+NGINX 443 portunu kullansın diyorsun.
+Yani Docker Compose bir nevi tüm sistemin yöneticisi.
+------------------------
+Incepiton pipeline
+Dockerfile'lar
+      │
+      ▼
+Image'lar oluşturulur
+      │
+      ▼
+Container'lar oluşturulur
+      │
+      ▼
+Docker Compose
+      │
+      ├── NGINX Container
+      ├── WordPress Container
+      └── MariaDB Container
+      │
+      ▼
+Docker Network ile birbirine bağlanırlar
+      │
+      ▼
+Volume'lar container'lara bağlanır
+      │
+      ▼
+Sistem çalışır
+      │
+      ▼
+Browser
+   ↓
+NGINX
+   ↓
+WordPress
+   ↓
+MariaDB
+------------------------
+29 da kalındı
