@@ -7,7 +7,7 @@ SOCKET=/run/mysqld/mysqld.sock
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 DB_PASSWORD=$(cat /run/secrets/db_password)
 
-mkdir -p /run/mysqld
+mkdir -p /run/mysqld "$DATADIR"
 chown -R mysql:mysql /run/mysqld "$DATADIR"
 
 if [ ! -d "$DATADIR/mysql" ]; then
