@@ -3,7 +3,7 @@ services:
     build:
       context: ./requirements/mariadb
     container_name: mariadb
-    image: mariadb
+    image: mariadb:inception
     env_file: .env
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -21,7 +21,7 @@ services:
     build:
       context: ./requirements/wordpress
     container_name: wordpress
-    image: wordpress
+    image: wordpress:inception
     env_file: .env
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -47,7 +47,7 @@ services:
     build:
       context: ./requirements/nginx
     container_name: nginx
-    image: nginx
+    image: nginx:inception
     env_file: .env
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME}
