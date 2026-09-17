@@ -1,0 +1,16 @@
+# Git
+.git
+.gitignore
+
+# Editor / temp files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Secrets
+secrets/
+*.env
