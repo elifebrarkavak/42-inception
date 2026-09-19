@@ -4,7 +4,7 @@ COMPOSE_DIR	= srcs
 COMPOSE_FILE	= $(COMPOSE_DIR)/docker-compose.yml
 ENV_FILE	= $(COMPOSE_DIR)/.env
 
-DATA_PATH	:= $(shell grep -m1 '^DATA_PATH=' $(ENV_FILE) | cut -d '=' -f2)
+DATA_PATH	= /home/elikavak/data
 
 COMPOSE		= docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE)
 

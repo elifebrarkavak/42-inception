@@ -4,6 +4,6 @@ secrets/*.txt
 # .env keeps non-sensitive config (per subject); if a real password
 # is ever put in one, ignore it instead of pushing it
 **/.env.local
-
+.env
 # macOS
 .DS_Store
