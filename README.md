@@ -82,7 +82,7 @@ usage and development documentation.
         └── nginx/              # Dockerfile + vhost conf + TLS cert generation script
 ```
 
-Each service's Dockerfile is built from `debian:bookworm-slim` (the
+Each service's Dockerfile is built from `debian:bookworm` (the
 penultimate stable Debian release), installs only what that service needs,
 and hands off to a small shell script that finishes runtime configuration
 (waiting for dependencies, generating certificates, creating the database,
@@ -147,3 +147,18 @@ is stored exactly where the subject requires.
 - [PHP-FPM configuration reference](https://www.php.net/manual/en/install.fpm.configuration.php)
 
 ### AI usage
+
+An AI assistant (Claude) was used during this project for:
+
+- **Debugging / troubleshooting** — diagnosing failures in the Dockerfiles,
+  `docker-compose.yml`, and the entrypoint shell scripts (e.g. service
+  startup ordering, permission issues on volumes, TLS certificate
+  generation, WordPress/MariaDB initialization errors) by explaining error
+  messages and suggesting fixes to try and verify manually.
+- **Documentation writing** — drafting and structuring this `README.md`,
+  `USER_DOC.md`, and `DEV_DOC.md` from notes about the already-implemented
+  setup, then reviewing and correcting the generated text.
+
+All Dockerfiles, configuration files, and scripts were written and tested by
+the student; the AI was not used to generate the project's architecture or
+to solve the assignment on the student's behalf.

@@ -21,7 +21,7 @@ and volume management, and where project data lives.
 |------------------------------|------------------------------------------------------------------|
 | `srcs/.env`                 | Non-sensitive configuration: domain, DB name/user, WP title, admin/user names & emails. Read by `docker-compose.yml` and injected into containers. |
 | `srcs/docker-compose.yml`   | Defines the three services, the `inception` network, the two named volumes, and the Docker secrets wiring. |
-| `srcs/requirements/<service>/Dockerfile` | One per service (`mariadb`, `wordpress`, `nginx`), each built from `debian:bookworm-slim`. |
+| `srcs/requirements/<service>/Dockerfile` | One per service (`mariadb`, `wordpress`, `nginx`), each built from `debian:bookworm`. |
 | `srcs/requirements/<service>/conf/`      | Service configuration copied into the image (MariaDB `50-server.cnf`, PHP-FPM `www.conf`, NGINX `nginx.conf`). |
 | `srcs/requirements/<service>/tools/`     | Entrypoint shell scripts that finish runtime setup and then `exec` the real foreground process. |
 
