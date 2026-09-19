@@ -8,7 +8,6 @@ DATA_PATH	:= $(shell grep -m1 '^DATA_PATH=' $(ENV_FILE) | cut -d '=' -f2)
 
 COMPOSE		= docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE)
 
-.PHONY: all build up down stop start clean fclean re data
 
 all: build up
 
@@ -32,7 +31,7 @@ start:
 	$(COMPOSE) start
 
 clean: down
-	docker system prune -af
+	@docker system prune -af > /dev/null
 
 fclean: clean
 	@sudo rm -rf $(DATA_PATH)/mariadb

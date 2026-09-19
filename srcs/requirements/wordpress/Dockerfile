@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm
 
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends \
@@ -13,7 +13,7 @@ RUN apt-get update && \
 		php8.2-intl \
 		mariadb-client \
 		curl \
-		less \
+		ca-certificates \
 	&& curl -o /usr/local/bin/wp -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
 	&& chmod +x /usr/local/bin/wp \
 	&& rm -rf /var/lib/apt/lists/*
