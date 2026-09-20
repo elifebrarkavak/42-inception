@@ -102,13 +102,15 @@ MariaDB
       │ sonuç
       ▼
 WordPress
-**WordPress=WordPress bir Content Management System (CMS)'dir.Yani web sitesi oluşturmayı ve içeriği yönetmeyi sağlayan bir yazılımdır.PHP ile yazılmıştır.
+**WordPress=WordPress bir Content Management System (CMS)'dir.
+Yani web sitesi oluşturmayı ve içeriği yönetmeyi sağlayan bir yazılımdır.PHP ile yazılmıştır.
 **PHP-FPM=PHP-FPM, PHP kodlarını çalıştıran bir sistemdir.
 Inception'daki WordPress container'ında;
 WordPress
 +
 PHP-FPM
-**NGINX=Bir web server yazılımıdır.Kullanıcı siteye bağlandığında isteği ilk karşılayan servis NGINX'tir.NGINX isteğin ne olduğuna bakar.
+**NGINX=Bir web server yazılımıdır.Kullanıcı siteye bağlandığında isteği ilk karşılayan servis NGINX'tir.
+NGINX isteğin ne olduğuna bakar.
 **Debian = bir Linux dağıtımıdır ubuntu gibi
 container image'larını oluştururken Debian gibi minimal bir Linux ortamı temel alınır.
 Dockerfile = Bir servisin image'ı nasıl oluşturulur?
@@ -119,7 +121,7 @@ Container'lar aynı Docker network içerisinde birbirlerine ulaşabilirler.
 Kalıcı veriler ise:
 WordPress ───→ WordPress Volume
 MariaDB ─────→ Database Volume
-**TLS=HTTPS'in güvenli olmasını sağlayan temel protokoldür. GINX'in TLS yapılandırmasını yapılacak.
+**TLS=HTTPS'in güvenli olmasını sağlayan temel protokoldür. NGINX'in TLS yapılandırmasını yapılacak.
 **docker-compose.yml dosyası containerları birbirine bağlar.
 **docker build=ımage oluşturma dockerfile'dan/ docker run=container oluşturma imageden
 **process=çalışan program
@@ -226,7 +228,8 @@ Container'lar birbirini nasıl görüyor ? = Burada Docker Network devreye giriy
  Container     Container    Container
 Böylece container'lar birbirlerine ağ üzerinden ulaşabiliyor.
 
-Container'ı tamamen kaldırırsan container'ın kendi yazılabilir katmanındaki veriler de gider. Ama bizim WordPress database'imizin kaybolmasını istemiyoruz.
+Container'ı tamamen kaldırırsan container'ın kendi yazılabilir katmanındaki veriler de gider.
+Ama bizim WordPress database'imizin kaybolmasını istemiyoruz.
 Burada Docker Volume kullanıyoruz.
 Volume, kalıcı veriyi container'ın yaşam döngüsünden ayırmamızı sağlar.
 MariaDB Container
@@ -312,10 +315,10 @@ Tarayıcı
 Sayfa ekranda gösterilir
 
 https://     → HTTPS kullan
-ekavak.42.fr → ulaşmak istediğim domain
+elikavak.42.fr → ulaşmak istediğim domain
 443          → HTTPS'in varsayılan portu 
 (443 yazmasan bile HTTPS olduğu için tarayıcı varsayılan olarak 443'ü kullanabilir.)
-ekavak.42.fr hangi IP adresinde?
+elikavak.42.fr hangi IP adresinde?
 Ama o bilgisayarda birçok program çalışıyor olabilir, IP adresini bulmak tek başına yeterli değil.
 Tarayıcı hangisine gidecek?=Burada port devreye giriyor.
 443 portunda NGINX var
