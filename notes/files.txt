@@ -1,0 +1,444 @@
+Bu proje, tek bir sunucu içinde 3 ayrı konteyner kullanarak çalışan bir web altyapısı kuruyor
+NGINX: dışarıdan https 443 portundan gelir, WordPress’e yönlendirir
+WordPress + PHP-FPM: siteyi çalıştırır ve PHP işlemlerini yönetir
+MariaDB: veritabanını tutar
+
+-----------------------compose dosyası-----------------------
+Tüm konteynerleri tek yerden yönetir.
+MariaDB, WordPress, NGINX’i aynı ağ içinde başlatır.
+Network, volumes, secrets, ports ve depends_on tanımlarını yapar.
+
+Sorulabilecek soru:
+“Niye tek container değil de üç tane var?”
+“Her servis neden ayrı?”
+Beklenen cevap:
+
+Ayrı sorumluluklar için:
+NGINX: dışarıdan gelen HTTPS trafiği
+WordPress/PHP-FPM: uygulama ve PHP
+MariaDB: veritabanı
+Bu ayrım güvenlik, bakım ve ölçeklenebilirlik sağlar.
+
+build'lerin işlevi
+Docker image’ini burada oluşturacak.
+örn maridb içindeki Bu Dockerfile sayesinde MariaDB kurulur
+
+container_name: mariadb
+Container ismi “mariadb” olur.
+Böylece başka servisler ona “mariadb” adıyla erişebilir.
+
+image: mariadb:inception
+Oluşturulan imgenin ismi.
+Bu imge özel olarak proje için hazırlanır.
+
+env_file: .env
+.env dosyasını okuyup ortam değişkenlerini içeri aktarır.
+Örneğin veritabanı adı, kullanıcı adı gibi değerler burada tutulur.
+
+environment:
+MariaDB veritabanı adı ve kullanıcı adı burada tanımlanır.
+${MYSQL_DATABASE} ve ${MYSQL_USER} değerleri .env dosyasından gelir
+
+volumes:
+mariadb_data isimli persistent volume bağlanıyor. (kalıcı)
+Container içindeki /var/lib/mysql dizini, host üzerindeki kalıcı alana bağlanıyor.
+Bu sayede veritabanı verileri container silinse bile kaybolmaz.
+
+networks:
+Bu servis inception ağında çalışacak.
+Diğer servisler de aynı ağa bağlı olduğu için birbirlerine isimleriyle erişebilecekler.
+
+secrets:
+MariaDB için şifreler Docker Secret olarak veriliyor.
+Bu şifreler .env dosyasında değil, ayrı dosyalarda tutuluyor.
+sebebi şifreler image içinde kalmasın diye
+
+restart: always
+Container bir hata durumunda otomatik yeniden başlatılır.
+
+depends_on:
+WordPress, MariaDB hazır olmadan başlamaz.
+Çünkü WordPress’in DB’ye bağlanması gerekir.
+İlk önce MariaDB başlar sonra WordPress başlatılır.
+
+NGINX, WordPress hazır olana kadar bekler.
+Çünkü NGINX WordPress’e PHP isteklerini yönlendirir.
+Yani WordPress başlamadan NGINX siteyi servis etmeye çalışmaz.
+
+ports:
+Host üzerindeki 443 portu, container içindeki 443 portuna yönlendirilir.
+Yani kullanıcılar HTTPS üzerinden bu porta erişir.
+Dışarıdan gelen istek NGINX’e gelir.
+
+networks:
+  inception:
+    driver: bridge
+
+Bu kısım, projeye özel bir Docker ağı oluşturur.
+
+Ne işe yarar?
+Servisler birbirleriyle iletişim kurar.
+Her container kendi IP’siyle değil, isimleriyle konuşur.
+Örneğin WordPress, MariaDB’ye “mariadb” ismiyle erişir.
+NGINX de WordPress’e “wordpress” ismiyle erişir.
+Neden bridge?
+Docker’un varsayılan özel ağ türüdür.
+Containerlar arasında güvenli ve izole bir iletişim sağlar.
+Host makinaya gereksiz şekilde her portu açmaz.
+Özet:
+Dışarıdan sadece NGINX 443 açılır.
+İçerideki servisler ise özel ağ üzerinden konuşur.
+Bu yüzden WordPress, MariaDB’ye doğrudan “localhost:3306” değil, “mariadb:3306” şeklinde erişir.
+
+Volumes: kalıcı veri alanları
+Burada iki kalıcı alan tanımlanıyor:
+
+mariadb_data
+wordpress_data
+Neden gerekli?
+Çünkü:
+
+MariaDB veritabanı verileri kaybolmamalı
+WordPress dosyaları kaybolmamalı
+Container silinse bile veriler host üzerinde yaşamalı
+mariadb_data
+MariaDB verilerini /var/lib/mysql içine yazacak.
+Bu alan, host tarafında ${DATA_PATH}/mariadb klasörüne bağlanıyor.
+Yani:
+
+Container içinde: /var/lib/mysql
+Host üzerinde: /home/elikavak/data/mariadb
+wordpress_data
+WordPress dosyalarını /var/www/html içine yazacak.
+Host tarafı: ${DATA_PATH}/wordpress
+Yani:
+
+Container içinde: /var/www/html
+Host üzerinde: /home/elikavak/data/wordpress
+driver: local
+Docker’un yerel sürücüsünü kullan.
+Bu, normal Docker volume mantığıyla uyumlu.
+
+driver_opts
+type: none
+o: bind
+device: ${DATA_PATH}/mariadb
+o: bind demek: klasörü bağla
+device demek: hangi host klasörüne bağlanacağını göster
+Yani bu aslında “Docker volume” gibi görünür ama gerçekte host klasörüne bind edilir
+Bu proje için bu teknik tercih edilmiştir:
+
+Docker volume gibi yönetilebilir
+ama verilerin host üzerinde tam olarak istenilen yerde saklanması sağlanır
+Sonuç:
+Bu blok, verilerin kalıcı olmasını ve host tarafında belirli klasörlerde tutulmasını sağlar.
+
+Secrets: gizli bilgiler
+Burada şifreler, Dockerfile içine yazılmadan ayrı dosyalardan gelir.
+
+-----------------------maridb-----------------------
+Dockerfile
+İçindeki mantık:
+Debian 12 (bookworm) tabanlı container oluşturur
+MariaDB sunucu paketini kurar
+Konfigürasyon dosyasını kopyalar
+Başlatma scriptini kopyalar
+Çalıştırma yetkisi verir
+Veritabanı klasörlerini hazırlar
+3306 portunu açar
+Son olarak scripti başlatır
+
+RUN apt-get update && apt-get install -y --no-install-recommends mariadb-server
+MariaDB kurulumunu yapar
+
+COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
+MariaDB ayar dosyasını içeri kopyalar
+
+COPY tools/mariadb.sh /usr/local/bin/mariadb.sh
+başlangıç scriptini kopyalar
+
+ENTRYPOINT ["/usr/local/bin/mariadb.sh"]
+container başlatıldığında bu script çalışır
+
+50-server.cnf - Bu dosya MariaDB’nin çalışma ayarlarını içerir.
+-bind-address = 0.0.0.0
+DB’nin tüm ağdan erişilebilir olmasını sağlar
+-port = 3306
+MariaDB varsayılan portu
+-datadir = /var/lib/mysql
+verilerin kayıt edileceği klasör
+-character-set-server = utf8mb4
+Türkçe ve modern karakterler için uygun karakter kümesi
+-skip-networking = 0
+ağ erişimini açık tut
+
+mariadb.sh - Bu script, container ilk açıldığında çalışır ve şunları yapar
+Şifreleri okur
+DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
+DB_PASSWORD=$(cat /run/secrets/db_password)
+root şifresini okur
+DB kullanıcı şifresini okur
+bunlar Docker secret olarak gelir
+
+Veritabanı klasörünü hazırlar
+mkdir -p /run/mysqld "$DATADIR"
+chown -R mysql:mysql /run/mysqld "$DATADIR"
+MariaDB için gerekli klasörler oluşturulur
+mysql kullanıcısına ait izinler verilir
+
+İlk kurulum kontrolü
+if [ ! -d "$DATADIR/mysql" ]; then
+Eğer veritabanı daha önce kurulmadıysa ilk kurulum başlatılır
+Bu, container ilk ayağa kalktığında çalışır
+
+mariadb-install-db ile sistem kurulumu
+mariadb-install-db --user=mysql --datadir="$DATADIR" --auth-root-authentication-method=normal
+MariaDB temel sistem dosyalarını üretir
+
+MariaDB sunucusunu başlatır
+mariadbd --user=mysql --datadir="$DATADIR" --socket="$SOCKET" --skip-networking &
+DB server başlatılır
+
+DB ve kullanıcı oluşturur
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';
+CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
+FLUSH PRIVILEGES;
+Bu blok çok önemli:
+root şifresi değiştirilir
+proje için veritabanı oluşturulur
+kullanıcı oluşturulur
+kullanıcıya DB üzerinde tam yetki verilir
+değişiklikler uygulanır
+
+Sunucuyu kapatıp yeniden çalıştırır
+mariadb-admin --socket="$SOCKET" -u root -p"${DB_ROOT_PASSWORD}" shutdown
+wait "$TMP_PID"
+kurulumu tamamladıktan sonra geçici sunucuyu kapatır
+
+Son olarak normal çalışma moduna geçer
+exec mariadbd --user=mysql --datadir="$DATADIR" --socket="$SOCKET"
+artık MariaDB gerçek foreground process olarak çalışır
+container canlı kalır
+
+Çünkü MariaDB’nin “ilk kurulum” mantığı burada yazılır.
+Yani:
+DB kurulumu
+kullanıcı oluşturma
+veritabanı oluşturma
+şifre verme
+servis başlatma
+bütün bunlar bu scriptte olur.
+
+-----------------------nginx-----------------------
+Dockerfile
+Ne yapar?
+Debian 12 tabanlı container oluşturur
+nginx paketini kurar
+openssl paketini kurar
+varsayılan nginx site dosyasını kaldırır
+konfigürasyon dosyasını kopyalar
+başlatma scriptini kopyalar
+443 portunu açar
+sonunda ENTRYPOINT olarak scripti çalıştırır
+
+COPY conf/nginx.conf /etc/nginx/conf.d/default.conf
+COPY tools/nginx.sh /usr/local/bin/nginx.sh
+RUN chmod +x /usr/local/bin/nginx.sh
+Bu üç satır demek:
+NGINX ayar dosyasını kopyala
+start scriptini kopyala
+çalıştırılabilir hale getir
+ENTRYPOINT ["/usr/local/bin/nginx.sh"] = container başlatıldığında önce nginx.sh çalışacak.
+ 
+nginx.conf = bu dosya NGINX’in davranışını tanımlar.
+Ana mantığı:
+443 portunda HTTPS dinle
+SSL sertifikalarını kullan
+WordPress dosyalarının olduğu yer: /var/www/html
+PHP dosyaları için WordPress containerına yönlendir
+
+HTTPS dinleme
+listen 443 ssl;
+listen [::]:443 ssl;
+NGINX 443 portunu dinliyor
+SSL aktif
+
+Sertifika konumu
+ssl_certificate     /etc/nginx/ssl/inception.crt;
+ssl_certificate_key /etc/nginx/ssl/inception.key;
+sertifika dosyası
+anahtar dosyası
+
+Kök dizin
+root /var/www/html;
+index index.php index.html;
+WordPress dosyaları burada
+default açılış dosyası php/html
+
+Genel istekler
+location / {
+    try_files $uri $uri/ /index.php?$args;
+}
+gelen URL isteklerini index.php ile çözmeye çalışır
+WordPress routing için gerekli
+
+PHP dosyaları için yönlendirme
+location ~ \.php$ {
+    fastcgi_pass wordpress:9000;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include fastcgi_params;
+}
+Bu en önemli kısımdır.
+
+.php dosyalarını doğrudan çalıştırmak yerine
+wordpress:9000 adresindeki PHP-FPM’e gönderiyor
+yani NGINX PHP’yı kendisi çalıştırmıyor, PHP-FPM’e yönlendiriyor
+Bu yüzden projectte NGINX ile WordPress ayrı container olarak çalışıyor.
+
+nginx.sh = Bu scriptin görevi NGINX’in runtime başlatılmasıdır.
+SSL klasörünü oluşturur
+SSL_DIR=/etc/nginx/ssl
+CERT_FILE="${SSL_DIR}/inception.crt"
+KEY_FILE="${SSL_DIR}/inception.key"
+mkdir -p "${SSL_DIR}"
+
+Sertifika yoksa üretir
+if [ ! -f "${CERT_FILE}" ] || [ ! -f "${KEY_FILE}" ]; then
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${KEY_FILE}" -out "${CERT_FILE}" \
+        -subj "/C=TR/ST=Istanbul/O=42/CN=${DOMAIN_NAME}"
+f
+eğer sertifika veya anahtar yoksa üretir
+openssl ile self-signed cert oluşturur
+CN bilgisi domain olarak alınır
+
+NGINX’i başlatır
+exec nginx -g "daemon off;"
+NGINX’i foreground modunda başlatır
+containerin PID 1’i olur
+container canlı kalır
+
+En kritik kavram (conf dosyasında)
+fastcgi_pass wordpress:9000;
+Bu satır çok önemli.
+Anlamı:
+NGINX, PHP dosyalarını kendi içinde çalıştırmıyor
+PHP-FPM çalışan WordPress containerına gönderiyor
+WordPress containerı 9000 portunda dinliyor
+Yani web katmanı ile uygulama katmanı ayrılmış oluyor.
+
+-----------------------wordpress-----------------------
+Dockerfile
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        php8.2-fpm \
+        php8.2-cli \
+        php8.2-mysqli \
+        ...
+Bu, WordPress’in çalışması için gerekli PHP altyapısını kurar.
+WP-CLI kurulumu:
+curl -o /usr/local/bin/wp -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+chmod +x /usr/local/bin/wp
+WP-CLI, WordPress komut satırı aracı
+WordPress kurulumunu, konfigürasyonunu ve kullanıcı oluşturmayı otomatik hale getirir
+
+COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf = PHP-FPM için ayar dosyası kopyalanır
+COPY tools/wordpress.sh /usr/local/bin/wordpress.sh
+RUN chmod +x /usr/local/bin/wordpress.sh
+başlatma scripti eklenir
+ENTRYPOINT ["/usr/local/bin/wordpress.sh"] = container başlatıldığında önce bu script çalışır
+EXPOSE 9000
+sadece Docker’a “bu port açık” diye bilgi verir
+WordPress/PHP-FPM’in arka planda çalıştığı port 9000
+
+www.conf = Bu dosya PHP-FPM’in nasıl çalışacağını tanımlar.
+Bu dosya PHP-FPM’in nasıl çalışacağını tanımlar.
+Ana amaç:
+PHP-FPM, WordPress’in PHP kodlarını çalıştıracak. Bu dosya onun port, kullanıcı ve işlem mantığını belirler.
+[www]
+user = www-data
+group = www-data
+listen = 9000
+PHP-FPM 9000 portunda dinleyecek
+www-data kullanıcısı ile çalışacak
+çalışan PHP processlerini dinamik şekilde yönetecek
+gereksinime göre child process oluşturacak
+clear_env = no
+Ortam değişkenleri temizlenmesin
+Scriptin .env içindeki değişkenleri kullanması için önemli
+
+wordpress.sh
+DB_PASSWORD=$(cat /run/secrets/db_password)
+WORDPRESS_ADMIN_PASSWORD=$(grep '^WORDPRESS_ADMIN_PASSWORD=' /run/secrets/credentials | cut -d '=' -f2-)
+WORDPRESS_USER_PASSWORD=$(grep '^WORDPRESS_USER_PASSWORD=' /run/secrets/credentials | cut -d '=' -f2-)
+veritabanı şifresi
+admin şifresi
+normal kullanıcı şifresi
+okunur
+
+Admin kullanıcı adını kontrol eder
+if echo "${WORDPRESS_ADMIN_USER}" | grep -qi admin; then
+    echo "[wordpress.sh] WORDPRESS_ADMIN_USER 'admin' iceremez." >&2
+    exit 1
+fi
+admin adı “admin” olmamalı
+güvenlik kontrolü
+
+MariaDB hazır olana kadar bekler
+until mysqladmin ping -h mariadb -u "${MYSQL_USER}" -p"${DB_PASSWORD}" --silent >/dev/null 2>&1; do
+    sleep 2
+done
+
+[ -f "${WP_PATH}/wp-load.php" ] || wp core download --path="${WP_PATH}" --allow-root
+WordPress çekirdeği indiriliyor
+/var/www/html klasörüne kurulum yapılıyor
+
+wp-config.php yoksa oluşturur
+[ -f "${WP_PATH}/wp-config.php" ] || wp config create --path="${WP_PATH}" \
+    --dbname="${MYSQL_DATABASE}" \
+    --dbuser="${MYSQL_USER}" \
+    --dbpass="${DB_PASSWORD}" \
+    --dbhost="mariadb:3306" --allow-root
+veritabanı bilgileri ile config dosyası oluşturuluyor
+host olarak mariadb:3306 kullanılıyor
+
+WordPress kurulumu yapılmadıysa kurar
+if ! wp core is-installed --path="${WP_PATH}" --allow-root >/dev/null 2>&1; then
+    wp core install --path="${WP_PATH}" --url="https://${DOMAIN_NAME}" --title="${WORDPRESS_TITLE}" \
+        --admin_user="${WORDPRESS_ADMIN_USER}" --admin_password="${WORDPRESS_ADMIN_PASSWORD}" \
+        --admin_email="${WORDPRESS_ADMIN_EMAIL}" --skip-email --allow-root
+
+    wp user create "${WORDPRESS_USER}" "${WORDPRESS_USER_EMAIL}" --path="${WP_PATH}" \
+        --role=author --user_pass="${WORDPRESS_USER_PASSWORD}" --allow-root
+fi
+WordPress kurulum yapılır
+site URL verilir
+site başlığı verilir
+admin kullanıcı oluşturulur
+normal kullanıcı oluşturulur
+kullanıcı mail ve şifre atanır
+
+izinlerini verir
+chown -R www-data:www-data "${WP_PATH}"
+
+PHP-FPM’i başlatır
+WordPress artık aktif hale gelir
+php-fpm foreground olarak çalışır
+
+clean: down
+    @docker system prune -af > /dev/null
+önce down çalıştır
+sonra dangling image/container kaldırır
+docker system prune -af:
+gereksiz Docker objelerini temizler
+kullanılmayan image/container/network gibi şeyleri siler
+Ama dikkat:
+bu veritabanı verilerini silmez
+çünkü volume’lar burada ayrılmış durumda
+
+COPY şunu yapar:
+hostta bulunan dosya
+image içerisine taşınır
