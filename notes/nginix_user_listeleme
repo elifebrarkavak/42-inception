@@ -1,0 +1,15 @@
+docker exec -it mariadb mariadb -h 127.0.0.1 -u elikavak_db -p inception_db
+db şifreni giriyorsun sonrasında
+SHOW COLUMNS FROM wp_users;
+
+--- diğer faydalı komutlar ---
+
+SHOW DATABASES;                     -- tüm veritabanlarını listeler
+USE inception_db;                   -- veritabanına geçer (bağlanırken zaten seçiliyse gerek yok)
+SHOW TABLES;                        -- veritabanındaki tüm tabloları listeler
+DESCRIBE wp_users;                  -- SHOW COLUMNS ile aynı, tablo sütunlarını gösterir
+SELECT * FROM wp_users;             -- tablodaki tüm satırları gösterir
+SELECT ID, user_login, user_email FROM wp_users;   -- sadece belirli sütunları gösterir
+SELECT COUNT(*) FROM wp_users;      -- kaç kullanıcı olduğunu sayar
+SELECT * FROM wp_options WHERE option_name = 'siteurl';   -- site url'sini kontrol eder
+EXIT;                                -- ya da QUIT; ile çıkılır
