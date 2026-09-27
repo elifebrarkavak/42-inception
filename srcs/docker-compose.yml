@@ -67,12 +67,14 @@ networks:
 
 volumes:
   mariadb_data:
+    name: mariadb
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${DATA_PATH}/mariadb
   wordpress_data:
+    name: wordpress
     driver: local
     driver_opts:
       type: none

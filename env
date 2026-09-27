@@ -1,0 +1,14 @@
+LOGIN=elikavak
+DOMAIN_NAME=elikavak.42.fr
+DATA_PATH=/home/elikavak/data
+
+MYSQL_DATABASE=inception_db
+MYSQL_USER=elikavak_db
+
+WORDPRESS_TITLE="Inception"
+
+WORDPRESS_ADMIN_USER=elikavak
+WORDPRESS_ADMIN_EMAIL=elikavak@example.com
+
+WORDPRESS_USER=ebrar
+WORDPRESS_USER_EMAIL=ebrar@example.com

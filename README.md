@@ -148,7 +148,7 @@ is stored exactly where the subject requires.
 
 ### AI usage
 
-An AI assistant (Claude) was used during this project for:
+An AI assistant  was used during this project for:
 
 - **Debugging / troubleshooting** — diagnosing failures in the Dockerfiles,
   `docker-compose.yml`, and the entrypoint shell scripts (e.g. service
